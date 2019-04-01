@@ -1,59 +1,111 @@
 module.exports = function(app,models){
-  app.get("/getTest/:id",(req,res)=>{
-    models.Test.findOne({
-      where:{
-        testid:req.params.id
-      }
-    }).then(result=>{
-      res.json(result);
-    }).catch(function(err){
-      if(err.errors) res.json(err.errors[0].message);
+  app.get("/listquizzes",(req,res)=>{
+    // models.quiz.findAll({
+    //   attributes:["quizid"]
+    // }).then((result)=>{
+    //   res.json(result)
+    // })
+    models.sequelize.query('SELECT "quizid" FROM "quizzes" AS "quiz"').then(([result,metadata])=>{
+      res.json(result)
+    })
+  })
+  app.get("/getquiz/:id",(req,res)=>{
+    // models.quiz.findOne({
+    //   where:{
+    //     quizid:req.params.id
+    //   }
+    // }).then(result=>{
+    //   res.json(result);
+    // }).catch(function(err){
+    //   if(err.errors) res.json(err.errors[0].message);
+    // })
+    sql= 'SELECT "quizid", "accesskey", "qdata", "starttime", "endtime", "createdAt", "updatedAt" FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =\''+req.params.id +'\' '
+    models.sequelize.query(sql).then(([result,metadata])=>{
+      res.json(result)
     })
   })
 
-  app.post("/createTest",(req,res)=>{
-    models.Test.create({
-      testid:req.body.testid,
-      accesskey:req.body.accesskey,
-      qdata:req.body.qdata,
-      starttime:req.body.starttime,
-      endtime:req.body.endtime,
-    }).then(function(result){
+  app.post("/createquiz",(req,res)=>{
+    // models.quiz.create({
+    //   quizid:req.body.quizid,
+    //   accesskey:req.body.accesskey,
+    //   qdata:req.body.qdata,
+    //   starttime:req.body.starttime,
+    //   endtime:req.body.endtime,
+    // }).then(function(result){
+    //   res.json(result)
+    // }).catch(function(err){
+    //   if(err.errors) res.json(err.errors[0].message);
+    // })
+    qdata = JSON.stringify(req.body.qdata)
+    console.log(date)
+    date = new Date()
+    date = date.toJSON()
+    sql='INSERT INTO "quizzes" ("quizid","accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\''+req.body.quizid+'\',\''+req.body.accesskey+'\',\''+qdata+'\',\''+req.body.starttime+'\',\''+req.body.endtime+'\',\''+date+'\',\''+date+'\' ) RETURNING *'
+    models.sequelize.query(sql).then(([result,metadata])=>{
       res.json(result)
-    }).catch(function(err){
-      if(err.errors) res.json(err.errors[0].message);
+    }).catch((err)=>{
+      res.json("There has been an error")
     })
   })
   app.post("/createUser",(req,res)=>{
-    models.User.create({
-      userid:req.body.userid,
-      name:req.body.name,
-      age:req.body.age
-    }).then(function(result){
+    // models.User.create({
+    //   userid:req.body.userid,
+    //   name:req.body.name,
+    //   age:req.body.age
+    // }).then(function(result){
+    //   res.json(result)
+    // }).catch(function(err){
+    //   if(err.errors) res.json(err.errors[0].message);
+    // })
+    date = new Date()
+    date = date.toJSON()
+    sql='INSERT INTO "Users" ("userid","name","age","createdAt","updatedAt") VALUES (\''+req.body.userid+'\',\''+req.body.name+'\','+req.body.age+',\''+date+'\',\''+date+'\') RETURNING *'
+    models.sequelize.query(sql).then(([result,metadata])=>{
       res.json(result)
-    }).catch(function(err){
-      if(err.errors) res.json(err.errors[0].message);
+    }).catch((err)=>{
+      res.json("There has been an error")
     })
   })
   app.post("/getResponses",(req,res)=>{
     //User verification
     //Group verification
-    models.Response.find({
+    models.Response.findAll({
       where:{
         UserUserid:req.body.userid,
-        TestTestid:req.body.testid
+        quizQuizid:req.body.quizid
       }
+    }).then((result)=>{
+      res.json(result)
+    })
+  })
+
+  app.post("/startquiz",(req,res)=>{
+    // models.Response.create({
+    //   UserUserid:req.body.userid,
+    //   quizQuizid:req.body.quizid,
+    //   response:[]
+    // }).then((result)=>{
+    //   res,json(result)
+    // })
+    date = new Date()
+    date = date.toJSON()
+    sql='INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","UserUserid") SELECT  \'[]\', \''+date+'\', \''+date+'\', \''+req.body.quizid+'\', \''+req.body.userid+'\' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "UserUserid"=\''+req.body.userid+'\' AND "quizQuizid"=\''+req.body.quizid+'\' ) RETURNING *'
+    models.sequelize.query(sql).then(([result,metadata])=>{
+      res.json(result)
+    }).catch((err)=>{
+      console.log(err)
+      res.json("There has been an error")
     })
   })
   app.post("/sendAnswer",(req,res)=>{
     //User verification
     //Group verification
-    models.User.findOne({where:{userid:req.body.userid}}).then(user=>{
-      models.Test.findOne({where:{testid:req.body.testid}}).then(test=>{
+
         models.Response.findOrCreate({
           where:{
-            UserUserid:user.userid,
-            TestTestid:test.testid,
+            UserUserid:req.body.userid,
+            quizQuizid:req.body.quizid,
           },
           defaults:{
               response:[]
@@ -64,7 +116,5 @@ module.exports = function(app,models){
             res.json(result)
           }).catch(err=>{res.json("response pattern incorrect")})
         }).catch(err=>{res.json("Use correct values")})
-      }).catch(err=>{console.log(err); res.json("Use correct testid")})
-    }).catch(err=>{res.json("Use correct userid")})
   })
 }
