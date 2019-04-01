@@ -70,13 +70,19 @@ module.exports = function(app,models){
   app.post("/getResponses",(req,res)=>{
     //User verification
     //Group verification
-    models.Response.findAll({
-      where:{
-        UserUserid:req.body.userid,
-        quizQuizid:req.body.quizid
-      }
-    }).then((result)=>{
+    // models.Response.findAll({
+    //   where:{
+    //     UserUserid:req.body.userid,
+    //     quizQuizid:req.body.quizid
+    //   }
+    // }).then((result)=>{
+    //   res.json(result)
+    // })
+    sql='SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "UserUserid" FROM "Responses" AS "Response" WHERE "Response"."UserUserid" = \''+req.body.userid+'\' AND "Response"."quizQuizid" =\''+req.body.quizid+'\''
+    models.sequelize.query(sql).then(([result,metadata])=>{
       res.json(result)
+    }).catch((err)=>{
+      res.json("There has been an error")
     })
   })
 
