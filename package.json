@@ -1,0 +1,25 @@
+{
+  "name": "quazapp",
+  "version": "1.0.0",
+  "description": "trialquazapp",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/deep-fried-potato/trial-quazapp.git"
+  },
+  "author": "deep-fried-potato",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/deep-fried-potato/trial-quazapp/issues"
+  },
+  "homepage": "https://github.com/deep-fried-potato/trial-quazapp#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "pg": "^7.9.0",
+    "pg-hstore": "^2.3.2",
+    "sequelize": "^5.1.0"
+  }
+}
