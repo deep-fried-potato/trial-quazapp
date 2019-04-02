@@ -87,6 +87,8 @@ module.exports = function(app,models){
   })
 
   app.post("/startquiz",(req,res)=>{
+    // User verification
+    // Group verification
     // models.Response.create({
     //   UserUserid:req.body.userid,
     //   quizQuizid:req.body.quizid,
@@ -108,19 +110,38 @@ module.exports = function(app,models){
     //User verification
     //Group verification
 
-        models.Response.findOrCreate({
-          where:{
-            UserUserid:req.body.userid,
-            quizQuizid:req.body.quizid,
-          },
-          defaults:{
-              response:[]
-          }
-        }).then(([resp,created])=>{
-          resp.response[req.body.question] = req.body.answer;
-          resp.update({response:resp.response}).then(result=>{
-            res.json(result)
-          }).catch(err=>{res.json("response pattern incorrect")})
-        }).catch(err=>{res.json("Use correct values")})
+    // models.Response.findOrCreate({
+    //   where:{
+    //     UserUserid:req.body.userid,
+    //     quizQuizid:req.body.quizid,
+    //   },
+    //   defaults:{
+    //       response:[]
+    //   }
+    // }).then(([resp,created])=>{
+    //   resp.response[req.body.question] = req.body.answer;
+    //   resp.update({response:resp.response}).then(result=>{
+    //     res.json(result)
+    //   }).catch(err=>{res.json("response pattern incorrect")})
+    // }).catch(err=>{res.json("Use correct values")})
+    sql='SELECT * FROM "Responses" AS "Response" WHERE "Response"."UserUserid"=\''+req.body.userid+'\' AND "Response"."quizQuizid"=\''+req.body.quizid+'\''
+    models.sequelize.query(sql).then(([result,metadata])=>{
+      id=result[0].id
+      response = result[0].response
+      response[req.body.question] = req.body.answer
+      response = JSON.stringify(response)
+      date = new Date()
+      date = date.toJSON()
+      sql='UPDATE "Responses" SET "response"=\''+response+'\', "updatedAt"=\''+date+'\' WHERE "id"='+id+' RETURNING *'
+      models.sequelize.query(sql).then(([result,metadata])=>{
+        res.json(result)
+      }).catch((err)=>{
+        console.log(err)
+        res.json("There has been an error")
+      })
+    }).catch((err)=>{
+      console.log(err)
+      res.json("There has been an error")
+    })
   })
 }
