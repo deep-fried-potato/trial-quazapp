@@ -1,12 +1,19 @@
-module.exports = function(sequelize,DataTypes){
-  var User = sequelize.define("User",{
-    userid:{type: DataTypes.STRING, primaryKey:true},
-    name: {type:DataTypes.STRING},
-    age:{type:DataTypes.INTEGER}
+module.exports = function (sequelize, DataTypes) {
+
+  var User = sequelize.define("User", {
+    userid: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    name: { type: DataTypes.STRING },
+    age: { type: DataTypes.INTEGER },
   });
-  User.associate = function(models){
-    models.User.hasMany(models.Response)
-  };
+
+  User.associate = (models) => {
+    //  models.User.hasOne(models.Student)
+    //  models.User.hasOne(models.Teacher)
+  }
 
   return User;
 };
