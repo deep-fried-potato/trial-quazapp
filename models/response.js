@@ -7,15 +7,15 @@ module.exports = function(sequelize,DataTypes){
     models.Response.belongsTo(models.User, {
       onDelete: "CASCADE",
       foreignKey: {
-        allowNull: false
+        allowNull: false,
       }
     });
   };
   Response.associate = function (models) {
-    models.Response.belongsTo(models.Test, {
+    models.Response.belongsTo(models.quiz, {
       onDelete: "CASCADE",
       foreignKey: {
-        allowNull: false
+        allowNull: false,
       }
     });
   };
