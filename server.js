@@ -12,9 +12,9 @@ app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(express.static('api/static'));
 
 
-var quizRoutes = require("./api/quiz/quizRoutes")
+var quizRoutes = require("./api/quizRoutes")
 
-app.use('/quiz', quizRoutes)
+app.use('/quiz', quizRoutes(models))
 
 models.sequelize.sync().then(function () {
   app.listen(port, () => {
