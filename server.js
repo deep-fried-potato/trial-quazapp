@@ -13,7 +13,9 @@ app.use(express.static('api/static'));
 
 
 var quizRoutes = require("./api/quizRoutes")
+var courseRoutes = require("./api/courseRoutes")
 
+app.use('/course', courseRoutes(models))
 app.use('/quiz', quizRoutes(models))
 
 models.sequelize.sync().then(function () {
