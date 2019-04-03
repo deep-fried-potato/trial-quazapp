@@ -65,7 +65,7 @@ module.exports = function (models) {
     // })
     date = new Date()
     date = date.toJSON()
-    sql = 'INSERT INTO "Users" ("userid","name","age","createdAt","updatedAt") VALUES (\'' + req.body.userid + '\',\'' + req.body.name + '\',' + req.body.age + ',\'' + date + '\',\'' + date + '\') RETURNING *'
+    sql = `INSERT INTO "Users" ("name","age","createdAt","updatedAt","isTeacher") VALUES ('${req.body.name}',${req.body.age},'${date}','${date}',${req.body.isTeacher}) RETURNING *`
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {
@@ -77,13 +77,13 @@ module.exports = function (models) {
     //Group verification
     // models.Response.findAll({
     //   where:{
-    //     UserUserid:req.body.userid,
+    //     StudentSid:req.body.userid,
     //     quizQuizid:req.body.quizid
     //   }
     // }).then((result)=>{
     //   res.json(result)
     // })
-    sql = 'SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "UserUserid" FROM "Responses" AS "Response" WHERE "Response"."UserUserid" = \'' + req.body.userid + '\' AND "Response"."quizQuizid" =\'' + req.body.quizid + '\''
+    sql = 'SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "StudentSid" FROM "Responses" AS "Response" WHERE "Response"."StudentSid" = '+req.body.userid+' AND "Response"."quizQuizid" =\'' + req.body.quizid + '\''
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {
@@ -95,7 +95,7 @@ module.exports = function (models) {
     // User verification
     // Group verification
     // models.Response.create({
-    //   UserUserid:req.body.userid,
+    //   StudentSid:req.body.userid,
     //   quizQuizid:req.body.quizid,
     //   response:[]
     // }).then((result)=>{
@@ -103,7 +103,7 @@ module.exports = function (models) {
     // })
     date = new Date()
     date = date.toJSON()
-    sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","UserUserid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', \'' + req.body.quizid + '\', \'' + req.body.userid + '\' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "UserUserid"=\'' + req.body.userid + '\' AND "quizQuizid"=\'' + req.body.quizid + '\' ) RETURNING *'
+    sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","StudentSid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', \'' + req.body.quizid + '\','+req.body.userid+' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "StudentSid"=\'' + req.body.userid + '\' AND "quizQuizid"=\'' + req.body.quizid + '\' ) RETURNING *'
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {
@@ -117,7 +117,7 @@ module.exports = function (models) {
 
     // models.Response.findOrCreate({
     //   where:{
-    //     UserUserid:req.body.userid,
+    //     StudentSid:req.body.userid,
     //     quizQuizid:req.body.quizid,
     //   },
     //   defaults:{
@@ -129,7 +129,7 @@ module.exports = function (models) {
     //     res.json(result)
     //   }).catch(err=>{res.json("response pattern incorrect")})
     // }).catch(err=>{res.json("Use correct values")})
-    sql = 'SELECT * FROM "Responses" AS "Response" WHERE "Response"."UserUserid"=\'' + req.body.userid + '\' AND "Response"."quizQuizid"=\'' + req.body.quizid + '\''
+    sql = 'SELECT * FROM "Responses" AS "Response" WHERE "Response"."StudentSid"= '+req.body.userid+' AND "Response"."quizQuizid"=\'' + req.body.quizid + '\''
     models.sequelize.query(sql).then(([result, metadata]) => {
       id = result[0].id
       response = result[0].response
