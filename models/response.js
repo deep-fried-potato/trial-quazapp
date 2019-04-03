@@ -1,17 +1,16 @@
-module.exports = function(sequelize,DataTypes){
-  var Response = sequelize.define("Response",{
-    response:{type:DataTypes.JSONB},
+module.exports = function (sequelize, DataTypes) {
+  var Response = sequelize.define("Response", {
+    response: { type: DataTypes.JSONB },
   });
 
   Response.associate = function (models) {
-    models.Response.belongsTo(models.User, {
+    models.Response.belongsTo(models.Student, {
       onDelete: "CASCADE",
       foreignKey: {
         allowNull: false,
       }
-    });
-  };
-  Response.associate = function (models) {
+    })
+
     models.Response.belongsTo(models.quiz, {
       onDelete: "CASCADE",
       foreignKey: {
