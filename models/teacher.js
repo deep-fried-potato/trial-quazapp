@@ -9,7 +9,7 @@ module.exports = function (sequalize, DataTypes) {
   })
 
   Teacher.associate = function (models) {
-    models.Teacher.hasMa(models.Course)
+    models.Teacher.hasMany(models.Course)
     models.Teacher.belongsTo(models.User, { foreignKey: 'tid' })
   }
 
