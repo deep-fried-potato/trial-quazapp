@@ -6,14 +6,17 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true,
       autoIncrement: true
     },
+
+    username: { type: DataTypes.STRING, unique: true, allowNull: false },
+    password: { type: DataTypes.STRING, allowNull: false },
     name: { type: DataTypes.STRING },
     age: { type: DataTypes.INTEGER },
     isTeacher: { type: DataTypes.BOOLEAN }
   });
 
   User.associate = (models) => {
-    models.User.hasOne(models.Student)
-    models.User.hasOne(models.Teacher)
+    models.User.hasOne(models.Student, { foreignKey: 'sid' })
+    models.User.hasOne(models.Teacher, { foreignKey: 'tid' })
   }
 
   return User;
