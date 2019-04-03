@@ -1,7 +1,5 @@
 let express = require('express')
-const metrohash64 = require('metrohash').metrohash64;
-
-
+const SparkMD5 = require('spark-md5')
 
 let getStudent = (req) => {
   return 1
@@ -48,7 +46,7 @@ module.exports = (models) => {
       order: [['cid', 'DESC']]
     }).then((entry) => {
       let cid = entry[0].cid;
-      let hash = metrohash64(cname + cid.toString(), teacher)
+      let hash = SparkMD5.hash(cname + cid.toString())
 
       models.course.create({
         cname: req.body.cname,
