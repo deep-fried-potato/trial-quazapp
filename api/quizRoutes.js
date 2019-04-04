@@ -43,7 +43,6 @@ module.exports = function (models) {
     //   if(err.errors) res.json(err.errors[0].message);
     // })
     qdata = JSON.stringify(req.body.qdata)
-    console.log(date)
     date = new Date()
     date = date.toJSON()
     sql = 'INSERT INTO "quizzes" ("quizid","accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.quizid + '\',\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
