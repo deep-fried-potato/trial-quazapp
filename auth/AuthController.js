@@ -13,10 +13,11 @@ module.exports = function(models){
     router.post('/register', (req,res) => {
         var hashedPassword = bcrypt.hashSync(req.body.password,8);
         models.User.create({
+            username : req.body.username,
             name : req.body.name,
             email : req.body.email,
-            age: 18,
-            isTeacher: true,
+            age: req.body.age,
+            isTeacher: req.body.isTeacher,
             password : hashedPassword
         }).then((user)=>{
             
