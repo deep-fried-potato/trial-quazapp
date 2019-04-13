@@ -6,7 +6,8 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true,
       autoIncrement: true
     },
-    accesskey: { type: DataTypes.STRING },
+    quizname:{type: DataTypes.STRING},
+    accesskey: { type: DataTypes.STRING, allowNull:false },
     qdata: { type: DataTypes.JSONB },
     starttime: { type: DataTypes.DATE, validate: { isDate: true } },
     endtime: { type: DataTypes.DATE, validate: { isDate: true } },

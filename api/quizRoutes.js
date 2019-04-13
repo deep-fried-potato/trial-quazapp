@@ -1,5 +1,5 @@
 let express = require('express')
-
+let token2id = require("../auth/token2id")
 module.exports = function (models) {
 
   let router = express.Router()
@@ -30,7 +30,7 @@ module.exports = function (models) {
     })
   })
 
-  router.post("/createquiz", (req, res) => {
+  router.post("/createquiz",(req, res) => {
     // models.quiz.create({
     //   quizid:req.body.quizid,
     //   accesskey:req.body.accesskey,
@@ -42,6 +42,23 @@ module.exports = function (models) {
     // }).catch(function(err){
     //   if(err.errors) res.json(err.errors[0].message);
     // })
+
+    token2id(req.get("x-access-token")).then((id)=>{
+      models.sequelize.query(`SELECT "isTeacher" FROM "Users" WHERE "userid"=${id}`).then(([result,metadata])=>{
+        console.log(result[0])
+      })
+    }).catch((err)=>{
+      console.log("A token error occured")
+    })
+
+    // try{
+    //     var id = await token2id(req.get("x-access-token"))
+    //     console.log(id)
+    // }
+    // catch{
+    //   console.log("Token error")
+    // }
+
     qdata = JSON.stringify(req.body.qdata)
     date = new Date()
     date = date.toJSON()
