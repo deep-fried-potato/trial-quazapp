@@ -1,7 +1,11 @@
 module.exports = function (sequelize, DataTypes) {
 
   var quiz = sequelize.define("quiz", {
-    quizid: { type: DataTypes.STRING, primaryKey: true },
+    quizid: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
     accesskey: { type: DataTypes.STRING },
     qdata: { type: DataTypes.JSONB },
     starttime: { type: DataTypes.DATE, validate: { isDate: true } },

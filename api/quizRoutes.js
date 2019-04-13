@@ -45,7 +45,7 @@ module.exports = function (models) {
     qdata = JSON.stringify(req.body.qdata)
     date = new Date()
     date = date.toJSON()
-    sql = 'INSERT INTO "quizzes" ("quizid","accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.quizid + '\',\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
+    sql = 'INSERT INTO "quizzes" ("accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {

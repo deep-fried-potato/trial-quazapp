@@ -12,7 +12,7 @@ module.exports = function (sequelize, DataTypes) {
     name: { type: DataTypes.STRING },
     email: { type:DataTypes.STRING, unique : true},
     age: { type: DataTypes.INTEGER },
-    isTeacher: { type: DataTypes.BOOLEAN }
+    isTeacher: { type: DataTypes.BOOLEAN, allowNull: false }
   });
 
   User.associate = (models) => {
