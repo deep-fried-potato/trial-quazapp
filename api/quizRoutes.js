@@ -44,8 +44,16 @@ module.exports = function (models) {
     // })
 
     token2id(req.get("x-access-token")).then((id)=>{
-      models.sequelize.query(`SELECT "isTeacher" FROM "Users" WHERE "userid"=${id}`).then(([result,metadata])=>{
-        console.log(result[0])
+      // get id and use course middleware to get course id , if both id equal, proceed
+          qdata = JSON.stringify(req.body.qdata)
+          date = new Date()
+          date = date.toJSON()
+          sql = 'INSERT INTO "quizzes" ("accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
+          models.sequelize.query(sql).then(([result, metadata]) => {
+            res.json(result)
+          }).catch((err) => {
+            res.json("There has been an error")
+          })
       })
     }).catch((err)=>{
       console.log("A token error occured")
@@ -59,15 +67,6 @@ module.exports = function (models) {
     //   console.log("Token error")
     // }
 
-    qdata = JSON.stringify(req.body.qdata)
-    date = new Date()
-    date = date.toJSON()
-    sql = 'INSERT INTO "quizzes" ("accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
-    models.sequelize.query(sql).then(([result, metadata]) => {
-      res.json(result)
-    }).catch((err) => {
-      res.json("There has been an error")
-    })
   })
   router.post("/createUser", (req, res) => {
     // models.User.create({
