@@ -1,5 +1,5 @@
 let express = require('express')
-
+let token2id = require("../auth/token2id")
 module.exports = function (models) {
 
   let router = express.Router()
@@ -10,11 +10,16 @@ module.exports = function (models) {
     // }).then((result)=>{
     //   res.json(result)
     // })
-    models.sequelize.query('SELECT "quizid" FROM "quizzes" AS "quiz"').then(([result, metadata]) => {
-      res.json(result)
+    token2id(req.get("x-access-token")).then((id)=>{
+        //check if id(Student) is in course or not req.body.cid
+        //change SQL command after getting course api
+        models.sequelize.query(`SELECT "quizid" FROM "quizzes" AS "quiz"`).then(([result, metadata]) => {
+          res.json(result)
+        })
     })
+
   })
-  router.get("/getquiz/:id", (req, res) => {
+  router.get("/getquiz/:quizid", (req, res) => {
     // models.quiz.findOne({
     //   where:{
     //     quizid:req.params.id
@@ -24,13 +29,19 @@ module.exports = function (models) {
     // }).catch(function(err){
     //   if(err.errors) res.json(err.errors[0].message);
     // })
-    sql = 'SELECT "quizid", "accesskey", "qdata", "starttime", "endtime", "createdAt", "updatedAt" FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =\'' + req.params.id + '\' '
-    models.sequelize.query(sql).then(([result, metadata]) => {
-      res.json(result)
+    token2id(req.get("x-access-token")).then(async (id)=>{
+        //check if id(Student) is in course or not quiz.courseCid
+        //change SQL command after getting course api
+        var cid = await models.sequelize.query(`SELECT "CourseCid" FROM "quizzes" WHERE "quizzes"."quizid"=${req.params.quizid} `)
+        sql = `SELECT "quizid", "accesskey", "qdata", "starttime", "endtime", "createdAt", "updatedAt" FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid}`
+        models.sequelize.query(sql).then(([result, metadata]) => {
+          res.json(result)
+        })
     })
+
   })
 
-  router.post("/createquiz", (req, res) => {
+  router.post("/createquiz",(req, res) => {
     // models.quiz.create({
     //   quizid:req.body.quizid,
     //   accesskey:req.body.accesskey,
@@ -42,17 +53,31 @@ module.exports = function (models) {
     // }).catch(function(err){
     //   if(err.errors) res.json(err.errors[0].message);
     // })
-    qdata = JSON.stringify(req.body.qdata)
-    console.log(date)
-    date = new Date()
-    date = date.toJSON()
-    sql = 'INSERT INTO "quizzes" ("quizid","accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.quizid + '\',\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
-    models.sequelize.query(sql).then(([result, metadata]) => {
-      res.json(result)
-    }).catch((err) => {
-      res.json("There has been an error")
+
+    token2id(req.get("x-access-token")).then((id)=>{
+      // get id and use course middleware to get course id , if both id equal, proceed
+          qdata = JSON.stringify(req.body.qdata)
+          date = new Date()
+          date = date.toJSON()
+          sql = 'INSERT INTO "quizzes" ("accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
+          models.sequelize.query(sql).then(([result, metadata]) => {
+            res.json(result)
+          }).catch((err) => {
+            res.json("There has been an error")
+          })
+      }).catch((err)=>{
+        console.log("A token error occured")
+      })
     })
-  })
+
+    // try{
+    //     var id = await token2id(req.get("x-access-token"))
+    //     console.log(id)
+    // }
+    // catch{
+    //   console.log("Token error")
+    // }
+
   router.post("/createUser", (req, res) => {
     // models.User.create({
     //   userid:req.body.userid,
@@ -65,7 +90,7 @@ module.exports = function (models) {
     // })
     date = new Date()
     date = date.toJSON()
-    sql = 'INSERT INTO "Users" ("userid","name","age","createdAt","updatedAt") VALUES (\'' + req.body.userid + '\',\'' + req.body.name + '\',' + req.body.age + ',\'' + date + '\',\'' + date + '\') RETURNING *'
+    sql = `INSERT INTO "Users" ("name","age","createdAt","updatedAt","isTeacher") VALUES ('${req.body.name}',${req.body.age},'${date}','${date}',${req.body.isTeacher}) RETURNING *`
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {
@@ -77,13 +102,13 @@ module.exports = function (models) {
     //Group verification
     // models.Response.findAll({
     //   where:{
-    //     UserUserid:req.body.userid,
+    //     StudentSid:req.body.userid,
     //     quizQuizid:req.body.quizid
     //   }
     // }).then((result)=>{
     //   res.json(result)
     // })
-    sql = 'SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "UserUserid" FROM "Responses" AS "Response" WHERE "Response"."UserUserid" = \'' + req.body.userid + '\' AND "Response"."quizQuizid" =\'' + req.body.quizid + '\''
+    sql = 'SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "StudentSid" FROM "Responses" AS "Response" WHERE "Response"."StudentSid" = '+req.body.userid+' AND "Response"."quizQuizid" =\'' + req.body.quizid + '\''
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {
@@ -95,7 +120,7 @@ module.exports = function (models) {
     // User verification
     // Group verification
     // models.Response.create({
-    //   UserUserid:req.body.userid,
+    //   StudentSid:req.body.userid,
     //   quizQuizid:req.body.quizid,
     //   response:[]
     // }).then((result)=>{
@@ -103,7 +128,7 @@ module.exports = function (models) {
     // })
     date = new Date()
     date = date.toJSON()
-    sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","UserUserid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', \'' + req.body.quizid + '\', \'' + req.body.userid + '\' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "UserUserid"=\'' + req.body.userid + '\' AND "quizQuizid"=\'' + req.body.quizid + '\' ) RETURNING *'
+    sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","StudentSid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', \'' + req.body.quizid + '\','+req.body.userid+' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "StudentSid"=\'' + req.body.userid + '\' AND "quizQuizid"=\'' + req.body.quizid + '\' ) RETURNING *'
     models.sequelize.query(sql).then(([result, metadata]) => {
       res.json(result)
     }).catch((err) => {
@@ -117,7 +142,7 @@ module.exports = function (models) {
 
     // models.Response.findOrCreate({
     //   where:{
-    //     UserUserid:req.body.userid,
+    //     StudentSid:req.body.userid,
     //     quizQuizid:req.body.quizid,
     //   },
     //   defaults:{
@@ -129,7 +154,7 @@ module.exports = function (models) {
     //     res.json(result)
     //   }).catch(err=>{res.json("response pattern incorrect")})
     // }).catch(err=>{res.json("Use correct values")})
-    sql = 'SELECT * FROM "Responses" AS "Response" WHERE "Response"."UserUserid"=\'' + req.body.userid + '\' AND "Response"."quizQuizid"=\'' + req.body.quizid + '\''
+    sql = 'SELECT * FROM "Responses" AS "Response" WHERE "Response"."StudentSid"= '+req.body.userid+' AND "Response"."quizQuizid"=\'' + req.body.quizid + '\''
     models.sequelize.query(sql).then(([result, metadata]) => {
       id = result[0].id
       response = result[0].response

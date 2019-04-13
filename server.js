@@ -17,6 +17,8 @@ var courseRoutes = require("./api/courseRoutes")
 
 app.use('/course', courseRoutes(models))
 app.use('/quiz', quizRoutes(models))
+var AuthController = require('./auth/AuthController');
+app.use('/api/auth', AuthController(models));
 
 models.sequelize.sync().then(function () {
   app.listen(port, () => {
