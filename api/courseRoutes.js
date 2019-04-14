@@ -1,5 +1,4 @@
 let express = require('express')
-const SparkMD5 = require('spark-md5')
 const md5 = require('md5')
 const token2id = require("../auth/token2id")
 
@@ -95,7 +94,7 @@ module.exports = (models) => {
       date = date.toJSON()
 
 
-      /* to create a new teacher 
+      /* to create a new teacher
       // let sql = `INSERT INTO "Teachers" VALUES (?, ?, ?) RETURNING *`
       // let teacher = await models.sequelize.query(sql, {
       //   replacements: [id, date, date]
@@ -107,7 +106,7 @@ module.exports = (models) => {
         replacements: [req.body.cname, hash, id, date, date, date]
       })
 
-      /* how_to_use 
+      /* how_to_use
       let newCid = course[0][0].cid
       let newTid = await _getters.getTidFromCourse(newCid) //or use "then"
       */
@@ -164,4 +163,3 @@ module.exports = (models) => {
 
   return router
 }
-
