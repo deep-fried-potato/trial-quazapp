@@ -5,11 +5,6 @@ module.exports = function (models) {
   let router = express.Router()
 
   router.get("/listquizzes", (req, res) => {
-    // models.quiz.findAll({
-    //   attributes:["quizid"]
-    // }).then((result)=>{
-    //   res.json(result)
-    // })
     token2id(req.get("x-access-token")).then((id)=>{
         //check if id(Student) is in course or not req.body.cid
         //change SQL command after getting course api
@@ -22,15 +17,6 @@ module.exports = function (models) {
 
   })
   router.get("/getquiz/:quizid", (req, res) => {
-    // models.quiz.findOne({
-    //   where:{
-    //     quizid:req.params.id
-    //   }
-    // }).then(result=>{
-    //   res.json(result);
-    // }).catch(function(err){
-    //   if(err.errors) res.json(err.errors[0].message);
-    // })
     token2id(req.get("x-access-token")).then((id)=>{
         //check if id(Student) is in course or not quiz.courseCid
         //change SQL command after getting course api
@@ -48,17 +34,6 @@ module.exports = function (models) {
   })
 
   router.post("/createquiz",(req, res) => {
-    // models.quiz.create({
-    //   quizid:req.body.quizid,
-    //   accesskey:req.body.accesskey,
-    //   qdata:req.body.qdata,
-    //   starttime:req.body.starttime,
-    //   endtime:req.body.endtime,
-    // }).then(function(result){
-    //   res.json(result)
-    // }).catch(function(err){
-    //   if(err.errors) res.json(err.errors[0].message);
-    // })
 
     token2id(req.get("x-access-token")).then((id)=>{
       // get id and use course middleware to get course id , if both id equal, proceed
@@ -76,25 +51,10 @@ module.exports = function (models) {
       })
     })
 
-    // try{
-    //     var id = await token2id(req.get("x-access-token"))
-    //     console.log(id)
-    // }
-    // catch{
-    //   console.log("Token error")
-    // }
+
 
   router.post("/getResponses", (req, res) => {
-    //User verification
-    //Group verification
-    // models.Response.findAll({
-    //   where:{
-    //     StudentSid:req.body.userid,
-    //     quizQuizid:req.body.quizid
-    //   }
-    // }).then((result)=>{
-    //   res.json(result)
-    // })
+
     token2id(req.get("x-access-token")).then((id)=>{
         //check if id(Student) is in course or not req.body.cid
         //change SQL command after getting course api
@@ -111,15 +71,7 @@ module.exports = function (models) {
   })
 
   router.post("/startquiz", (req, res) => {
-    // User verification
-    // Group verification
-    // models.Response.create({
-    //   StudentSid:req.body.userid,
-    //   quizQuizid:req.body.quizid,
-    //   response:[]
-    // }).then((result)=>{
-    //   res,json(result)
-    // })
+
     token2id(req.get("x-access-token")).then((id)=>{
         //check if id(Student) is in course or not req.body.cid
         //change SQL command after getting course api
@@ -138,23 +90,7 @@ module.exports = function (models) {
 
   })
   router.post("/sendAnswer", (req, res) => {
-    //User verification
-    //Group verification
-
-    // models.Response.findOrCreate({
-    //   where:{
-    //     StudentSid:req.body.userid,
-    //     quizQuizid:req.body.quizid,
-    //   },
-    //   defaults:{
-    //       response:[]
-    //   }
-    // }).then(([resp,created])=>{
-    //   resp.response[req.body.question] = req.body.answer;
-    //   resp.update({response:resp.response}).then(result=>{
-    //     res.json(result)
-    //   }).catch(err=>{res.json("response pattern incorrect")})
-    // }).catch(err=>{res.json("Use correct values")})
+    
     token2id(req.get("x-access-token")).then((userid)=>{
         //check if id(Student) is in course or not req.body.cid
         //change SQL command after getting course api
