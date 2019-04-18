@@ -120,5 +120,34 @@ module.exports = function (models) {
     })
   })
 
+  router.get("/quizresults/:quizid",async (req,res)=>{
+    token2id(req.get("x-access-token")).then(async (id)=>{
+      if(await getters.isTeacher(id)){
+          quizTeacherResults = await models.sequelize.query(`SELECT * FROM "Responses" WHERE "Responses"."quizQuizid"=${req.params.quizid}`)
+          res.json(quizTeacherResults[0])
+      }
+      else{
+        quizStudentResults = await models.sequelize.query(`SELECT * FROM "Responses" WHERE "Responses"."quizQuizid"=${req.params.quizid} AND "Responses"."StudentSid"=${id} `)
+        res.json(quizStudentResults[0])
+      }
+    }).catch((err)=>{
+      res.status(403).json("Token error")
+    })
+  })
+  router.get("/courseresults/:courseid",async (req,res)=>{
+    token2id(req.get("x-access-token")).then(async (id)=>{
+      if(await getters.isTeacher(id)){
+          courseTeacherResults = await models.sequelize.query(`SELECT * FROM "Responses" WHERE EXISTS(SELECT * FROM "quizzes" WHERE "quizzes"."quizid"="Responses"."quizQuizid" AND "quizzes"."CourseCid"=${req.params.courseid} )`)
+          res.json(courseTeacherResults[0])
+      }
+      else{
+        courseStudentResults = await models.sequelize.query(`SELECT * FROM "Responses" WHERE EXISTS(SELECT * FROM "quizzes" WHERE "quizzes"."quizid"="Responses"."quizQuizid" AND "quizzes"."CourseCid"=${req.params.courseid} ) AND "Responses"."StudentSid"=${id} `)
+        res.json(courseStudentResults[0])
+      }
+    }).catch((err)=>{
+      console.log(err)
+      res.status(403).json("Token error")
+    })
+  })
   return router
 }
