@@ -9,6 +9,7 @@ module.exports = function (sequelize, DataTypes) {
     quizname:{type: DataTypes.STRING},
     accesskey: { type: DataTypes.STRING, allowNull:false },
     qdata: { type: DataTypes.JSONB },
+    answers:{ type: DataTypes.JSONB },
     starttime: { type: DataTypes.DATE, validate: { isDate: true } },
     endtime: { type: DataTypes.DATE, validate: { isDate: true } },
   });
