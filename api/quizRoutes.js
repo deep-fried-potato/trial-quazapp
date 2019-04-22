@@ -5,12 +5,19 @@ module.exports = function (models) {
   let getters = require("../lib/getters")(models)
   let router = express.Router()
 
-  router.get("/listquizzes", (req, res) => {
-    token2id(req.get("x-access-token")).then((id)=>{
+  router.get("/listquizzes/:courseid",async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id)=>{
+        if(await getters.isTeacher(id)){
+          models.sequelize.query(`SELECT quizid,quizname,starttime,endtime from quizzes as quiz WHERE "quiz"."CourseCid"=${req.params.courseid} AND EXISTS (SELECT * FROM "Courses" WHERE "Courses"."TeacherTid"=${id})`).then(([result, metadata]) => {
+            res.json(result)
+          })
+        }
+        else{
+          models.sequelize.query(`SELECT quizid,quizname,starttime,endtime from quizzes as quiz WHERE "quiz"."CourseCid"=${req.params.courseid} AND EXISTS (SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`).then(([result, metadata]) => {
+            res.json(result)
+          })
+        }
 
-        models.sequelize.query(`SELECT quizid from quizzes as quiz WHERE EXISTS (SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`).then(([result, metadata]) => {
-          res.json(result)
-        })
     }).catch((err)=>{
       res.status(403).json("Token Error")
     })

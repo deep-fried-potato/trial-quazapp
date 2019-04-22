@@ -50,6 +50,20 @@ module.exports = (models) => {
     }
   })
 
+  router.get("/courseinfo/:cid",async (req,res)=>{
+    try{
+      sql = `SELECT cid,cname,"TeacherTid",username,name,email FROM "Courses","Users" WHERE "Courses"."cid" = ? AND "Courses"."TeacherTid"="Users"."userid" `
+      let result = await models.sequelize.query(sql,{
+        replacements: [req.params.cid]
+      })
+      res.json(result[0])
+    } catch(e){
+      console.log(e)
+      res.json(e)
+    }
+
+  })
+
 
   // router.get("/getcourse/:id", (req, res) => {
   //   models.Course.findOne({
