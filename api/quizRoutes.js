@@ -24,14 +24,25 @@ module.exports = function (models) {
   })
 
   router.get("/getquiz/:quizid", (req, res) => {
-    token2id(req.get("x-access-token")).then((id)=>{
-        sql = `SELECT * FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid} AND EXISTS (SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`
-        models.sequelize.query(sql).then(([result, metadata]) => {
-          if(result[0].starttime<new Date()) res.json(result)
-          else res.status(403).json("Sorry Test Didnt Start Yet")
-        }).catch((err)=>{
-          res.status(403).json("Quiz doesnt exist or you dont have permission to access it")
-        })
+    token2id(req.get("x-access-token")).then(async (id)=>{
+        if(await getters.isTeacher(id)){
+          sql = `SELECT * FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid}`
+          models.sequelize.query(sql).then(([result, metadata]) => {
+            res.json(result)
+          }).catch((err)=>{
+            res.status(403).json("Quiz doesnt exist or you dont have permission to access it")
+          })
+        }
+        else{
+          sql = `SELECT quizid,quizname,qdata,starttime,endtime,"createdAt","updatedAt","CourseCid" FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid} AND EXISTS (SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`
+          models.sequelize.query(sql).then(([result, metadata]) => {
+            if(result[0].starttime<new Date()) res.json(result)
+            else res.status(403).json("Sorry Test Didnt Start Yet")
+          }).catch((err)=>{
+            res.status(403).json("Quiz doesnt exist or you dont have permission to access it")
+          })
+        }
+
     }).catch((err)=>{
       res.json("Token Error")
     })
@@ -76,7 +87,7 @@ module.exports = function (models) {
   router.post("/startquiz",async (req, res) => {
     token2id(req.get("x-access-token")).then(async (id)=>{
         quizAuth = await models.sequelize.query(`SELECT * FROM quizzes as quiz WHERE "quiz"."quizid"=${req.body.quizid} AND EXISTS(SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`)
-        if(quizAuth[0].length>0){
+        if(quizAuth[0].length>0 && quizAuth[0][0].accesskey==req.body.accesskey){
           date = new Date()
           date = date.toJSON()
           sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","StudentSid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', ' + req.body.quizid + ','+ id +' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "StudentSid"=' + id + ' AND "quizQuizid"=' + req.body.quizid + ' ) RETURNING *'
