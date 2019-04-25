@@ -52,7 +52,7 @@ module.exports = (models) => {
 
   router.get("/courseinfo/:cid",async (req,res)=>{
     try{
-      sql = `SELECT cid,cname,"TeacherTid",username,name,email FROM "Courses","Users" WHERE "Courses"."cid" = ? AND "Courses"."TeacherTid"="Users"."userid" `
+      sql = `SELECT cid,cname,"TeacherTid",username,name,email,"joinKey" FROM "Courses","Users" WHERE "Courses"."cid" = ? AND "Courses"."TeacherTid"="Users"."userid" `
       let result = await models.sequelize.query(sql,{
         replacements: [req.params.cid]
       })
@@ -168,7 +168,7 @@ module.exports = (models) => {
 
     } catch (e) {
       console.log("noo....", e)
-      res.json("error")
+      res.status(403).json("error")
     }
 
   })

@@ -57,7 +57,7 @@ module.exports = function(models){
                 //     res.status(200).send(user);
                 // });
                 console.log(decoded);
-                models.sequelize.query(`SELECT "userid","username","email" FROM "Users" where "userid" = ${ decoded.id }`).then(([result,metadata])=>{
+                models.sequelize.query(`SELECT "userid","username","email","isTeacher" FROM "Users" where "userid" = ${ decoded.id }`).then(([result,metadata])=>{
                     if(result.length == 0)
                         return res.status(404).send("No user found.");
                     res.status(200).send(result);
