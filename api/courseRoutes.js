@@ -33,7 +33,7 @@ module.exports = (models) => {
         sql = `SELECT * FROM "Courses" WHERE "TeacherTid" = ?`
         console.log("hi")
       } else {
-        sql = `SELECT * FROM "Courses" WHERE cid IN (SELECT "CourseCid" as cid FROM "StudentCourse" WHERE "StudentSid" = ?)`
+        sql = `SELECT cid,cname,"joinKey","startDate","endDate","TeacherTid","name" FROM "Courses","Users" WHERE cid IN (SELECT "CourseCid" as cid FROM "StudentCourse" WHERE "StudentSid" = ?) AND "Users"."userid"="Courses"."TeacherTid"`
       }
 
       console.log(sql)
