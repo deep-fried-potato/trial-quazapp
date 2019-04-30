@@ -167,5 +167,22 @@ module.exports = function (models) {
       res.status(403).json("Token error")
     })
   })
+  router.get("/quizmarksall/:quizid",async (req,res)=>{
+    try {
+      var results_data = await models.sequelize.query(`SELECT "marks" from "Responses" WHERE "Responses"."quizQuizid"=${req.params.quizid}`)
+      results_data = results_data[0]
+      var marks_array = results_data.map(function (result){
+        return result.marks
+      }).filter((elem)=>{
+        return elem!=null
+      })
+
+      res.json(marks_array)
+    } catch (e) {
+      console.log(e)
+      res.status(500).send("error")
+    }
+
+  })
   return router
 }
