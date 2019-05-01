@@ -49,6 +49,6 @@ ALTER FUNCTION public.response_time_validate()
 
 CREATE TRIGGER response_time_vaidation
     BEFORE INSERT OR UPDATE
-    ON public."Responses"
+    OF response ON public."Responses"
     FOR EACH ROW
     EXECUTE PROCEDURE public.response_time_validate();

@@ -1,21 +1,13 @@
-let express = require('express')
+const express = require('express')
 const md5 = require('md5')
 const token2id = require("../auth/token2id")
-
-let getStudent = (req) => {
-  return 1
-}
-
-let getTeacher = (req) => {
-  return 1
-}
 
 module.exports = (models) => {
 
   // how_to_import
   const _getters = require("../lib/getters")(models)
 
-  let router = express.Router()
+  const router = express.Router()
 
   router.get('/listgroups', async (req, res) => {
     try {
@@ -50,14 +42,14 @@ module.exports = (models) => {
     }
   })
 
-  router.get("/courseinfo/:cid",async (req,res)=>{
-    try{
+  router.get("/courseinfo/:cid", async (req, res) => {
+    try {
       sql = `SELECT cid,cname,"TeacherTid",username,name,email,"joinKey" FROM "Courses","Users" WHERE "Courses"."cid" = ? AND "Courses"."TeacherTid"="Users"."userid" `
-      let result = await models.sequelize.query(sql,{
+      let result = await models.sequelize.query(sql, {
         replacements: [req.params.cid]
       })
       res.json(result[0])
-    } catch(e){
+    } catch (e) {
       console.log(e)
       res.json(e)
     }
@@ -151,11 +143,6 @@ module.exports = (models) => {
 
       let date = new Date()
       date = date.toJSON()
-
-      // sql = `INSERT INTO "Students" VALUES (?, ?, ?) RETURNING *`
-      // let teacher = await models.sequelize.query(sql, {
-      //   replacements: [id, date, date]
-      // })
 
 
       sql = `INSERT INTO "StudentCourse"("CourseCid", "StudentSid", "createdAt", "updatedAt") VALUES(?,?,?,?) RETURNING *`
