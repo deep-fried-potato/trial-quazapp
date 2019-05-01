@@ -264,11 +264,11 @@ module.exports = (models, client) => {
       res.json(e)
     }
 
-    let vectors = result.map((entry) => entry.sum)
+    let vectors = result.map((entry) => [parseInt(entry.sum)])
 
     console.log(vectors)
 
-    kmeans.clusterize(vectors, { k: 2 }, (err, res) => {
+    kmeans.clusterize(vectors, { k: 4 }, (err, res) => {
       if (err) console.error(err);
       else console.log('%o', res);
     });
