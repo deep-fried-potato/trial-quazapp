@@ -1,5 +1,4 @@
 const express = require('express')
-const SparkMD5 = require('spark-md5')
 const md5 = require('md5')
 const token2id = require("../auth/token2id")
 
@@ -26,7 +25,7 @@ module.exports = (models) => {
         sql = `SELECT * FROM "Courses" WHERE "TeacherTid" = ?`
         console.log("hi")
       } else {
-        sql = `SELECT * FROM "Courses" WHERE cid IN (SELECT "CourseCid" as cid FROM "StudentCourse" WHERE "StudentSid" = ?)`
+        sql = `SELECT cid,cname,"joinKey","startDate","endDate","TeacherTid","name" FROM "Courses","Users" WHERE cid IN (SELECT "CourseCid" as cid FROM "StudentCourse" WHERE "StudentSid" = ?) AND "Users"."userid"="Courses"."TeacherTid"`
       }
 
       console.log(sql)
@@ -42,6 +41,38 @@ module.exports = (models) => {
       res.json(e)
     }
   })
+
+  router.get("/courseinfo/:cid", async (req, res) => {
+    try {
+      sql = `SELECT cid,cname,"TeacherTid",username,name,email,"joinKey" FROM "Courses","Users" WHERE "Courses"."cid" = ? AND "Courses"."TeacherTid"="Users"."userid" `
+      let result = await models.sequelize.query(sql, {
+        replacements: [req.params.cid]
+      })
+      res.json(result[0])
+    } catch (e) {
+      console.log(e)
+      res.json(e)
+    }
+
+  })
+
+
+  // router.get("/getcourse/:id", (req, res) => {
+  //   models.Course.findOne({
+  //     where: {
+  //       cid: req.params.id
+  //     }
+  //   }).then(result => {
+  //     res.json(result);
+  //   }).catch((err) => {
+  //     models.sequelize.query(sql).then(([result, metadata]) => {
+  //       res.json(result)
+  //     }).catch((err) => {
+  //       res.json("There has been an error")
+  //     })
+  //     if (err.errors) res.json(err.errors[0].message)
+  //   })
+  // })
 
   router.post("/createcourse", async (req, res) => {
 
@@ -69,7 +100,7 @@ module.exports = (models) => {
       date = date.toJSON()
 
 
-      /* to create a new teacher 
+      /* to create a new teacher
       // let sql = `INSERT INTO "Teachers" VALUES (?, ?, ?) RETURNING *`
       // let teacher = await models.sequelize.query(sql, {
       //   replacements: [id, date, date]
@@ -81,7 +112,7 @@ module.exports = (models) => {
         replacements: [req.body.cname, hash, id, date, date, date]
       })
 
-      /* how_to_use 
+      /* how_to_use
       let newCid = course[0][0].cid
       let newTid = await _getters.getTidFromCourse(newCid) //or use "then"
       */
@@ -124,7 +155,7 @@ module.exports = (models) => {
 
     } catch (e) {
       console.log("noo....", e)
-      res.json("error")
+      res.status(403).json("error")
     }
 
   })
@@ -133,4 +164,3 @@ module.exports = (models) => {
 
   return router
 }
-

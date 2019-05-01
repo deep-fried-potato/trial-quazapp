@@ -1,194 +1,188 @@
-const express = require('express')
-const token2id = require("../auth/token2id")
+let express = require('express')
+let token2id = require("../auth/token2id")
+
 module.exports = function (models) {
+  let getters = require("../lib/getters")(models)
+  let router = express.Router()
 
-  const _testtimers = require("../lib/testtimers.js")(models)
-  const router = express.Router()
+  router.get("/listquizzes/:courseid", async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id) => {
+      if (await getters.isTeacher(id)) {
+        models.sequelize.query(`SELECT quizid,quizname,starttime,endtime from quizzes as quiz WHERE "quiz"."CourseCid"=${req.params.courseid} AND EXISTS (SELECT * FROM "Courses" WHERE "Courses"."TeacherTid"=${id})`).then(([result, metadata]) => {
+          res.json(result)
+        })
+      }
+      else {
+        models.sequelize.query(`SELECT quizid,quizname,starttime,endtime from quizzes as quiz WHERE "quiz"."CourseCid"=${req.params.courseid} AND EXISTS (SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`).then(([result, metadata]) => {
+          res.json(result)
+        })
+      }
 
-  router.get("/listquizzes", (req, res) => {
-    // models.quiz.findAll({
-    //   attributes:["quizid"]
-    // }).then((result)=>{
-    //   res.json(result)
-    // })
+    }).catch((err) => {
+      res.status(403).json("Token Error")
+    })
+  })
+
+  router.get("/getquiz/:quizid", (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id) => {
+      if (await getters.isTeacher(id)) {
+        sql = `SELECT * FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid}`
+        models.sequelize.query(sql).then(([result, metadata]) => {
+          res.json(result)
+        }).catch((err) => {
+          res.status(403).json("Quiz doesnt exist or you dont have permission to access it")
+        })
+      }
+      else {
+        sql = `SELECT quizid,quizname,qdata,starttime,endtime,"createdAt","updatedAt","CourseCid" FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid} AND EXISTS (SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`
+        models.sequelize.query(sql).then(([result, metadata]) => {
+          if (result[0].starttime < new Date()) res.json(result)
+          else res.status(403).json("Sorry Test Didnt Start Yet")
+        }).catch((err) => {
+          res.status(403).json("Quiz doesnt exist or you dont have permission to access it")
+        })
+      }
+
+    }).catch((err) => {
+      res.json("Token Error")
+    })
+  })
+
+  router.post("/createquiz", async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id) => {
+      if (await getters.isTeacher(id) && (await getters.getTidFromCourse(req.body.coursecid) == id)) {
+        qdata = JSON.stringify(req.body.qdata)
+        answers = JSON.stringify(req.body.answers)
+        date = new Date()
+        date = date.toJSON()
+        sql = 'INSERT INTO "quizzes" ("accesskey","quizname","qdata","answers","CourseCid","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + req.body.quizname + '\',\'' + qdata + '\',\'' + answers + '\',' + req.body.coursecid + ',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
+        models.sequelize.query(sql).then(([result, metadata]) => {
+          res.json(result)
+        }).catch((err) => {
+          res.json("Please Check quiz timings")
+        })
+      }
+      else {
+        res.status(403).json("Auth error. You might not have the permissions")
+      }
+    }).catch((err) => {
+      console.log(err)
+      res.json("A token error occured")
+    })
+  })
+
+  router.post("/getResponses", (req, res) => {
     token2id(req.get("x-access-token")).then((id) => {
-      //check if id(Student) is in course or not req.body.cid
-      //change SQL command after getting course api
-      models.sequelize.query(`SELECT "quizid" FROM "quizzes" AS "quiz"`).then(([result, metadata]) => {
+      sql = 'SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "StudentSid" FROM "Responses" AS "Response" WHERE "Response"."StudentSid" = ' + id + ' AND "Response"."quizQuizid" =' + req.body.quizid + ''
+      models.sequelize.query(sql).then(([result, metadata]) => {
         res.json(result)
+      }).catch((err) => {
+        res.status(403).json("You havent clicked on start quiz yet")
       })
     }).catch((err) => {
       res.status(403).json("Token Error")
     })
-
   })
-  router.get("/getquiz/:quizid", (req, res) => {
-    // models.quiz.findOne({
-    //   where:{
-    //     quizid:req.params.id
-    //   }
-    // }).then(result=>{
-    //   res.json(result);
-    // }).catch(function(err){
-    //   if(err.errors) res.json(err.errors[0].message);
-    // })
-    token2id(req.get("x-access-token")).then((id) => {
-      //check if id(Student) is in course or not quiz.courseCid
-      //change SQL command after getting course api
-      //WAIT FOR COURSE API
-      //var cid = await models.sequelize.query(`SELECT "CourseCid" FROM "quizzes" WHERE "quizzes"."quizid"=${req.params.quizid} `)
-      sql = `SELECT "quizid", "accesskey", "qdata", "starttime", "endtime", "createdAt", "updatedAt" FROM "quizzes" AS "quiz" WHERE "quiz"."quizid" =${req.params.quizid}`
-      models.sequelize.query(sql).then(([result, metadata]) => {
-        if (result[0].starttime < new Date()) res.json(result)
-        else res.status(403).json("Sorry Test Didnt Start Yet")
-      })
+
+  router.post("/startquiz", async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id) => {
+      quizAuth = await models.sequelize.query(`SELECT * FROM quizzes as quiz WHERE "quiz"."quizid"=${req.body.quizid} AND EXISTS(SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`)
+      if (quizAuth[0].length > 0 && quizAuth[0][0].accesskey == req.body.accesskey) {
+        date = new Date()
+        date = date.toJSON()
+        sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","StudentSid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', ' + req.body.quizid + ',' + id + ' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "StudentSid"=' + id + ' AND "quizQuizid"=' + req.body.quizid + ' ) RETURNING *'
+        models.sequelize.query(sql).then(([result, metadata]) => {
+          res.json(result)
+        }).catch((err) => {
+          console.log(err)
+          res.status(403).json("This is not the quiz timing")
+        })
+      }
+      else {
+        res.status(403).json("You are not authorized to take this test")
+      }
     }).catch((err) => {
-      res.json("Token Error")
+      res.status(403).json("Token Error")
     })
-
   })
 
-  router.post("/createquiz", (req, res) => {
-    // models.quiz.create({
-    //   quizid:req.body.quizid,
-    //   accesskey:req.body.accesskey,
-    //   qdata:req.body.qdata,
-    //   starttime:req.body.starttime,
-    //   endtime:req.body.endtime,
-    // }).then(function(result){
-    //   res.json(result)
-    // }).catch(function(err){
-    //   if(err.errors) res.json(err.errors[0].message);
-    // })
-
-    token2id(req.get("x-access-token")).then((id) => {
-      // get id and use course middleware to get course id , if both id equal, proceed
-      qdata = JSON.stringify(req.body.qdata)
-      date = new Date()
-      date = date.toJSON()
-      sql = 'INSERT INTO "quizzes" ("accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
-      models.sequelize.query(sql).then(([result, metadata]) => {
-        res.json(result)
-
-      }).catch((err) => {
-        res.json("There has been an error")
-      })
+  router.post("/sendAnswer", async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (userid) => {
+      quizAuth = await models.sequelize.query(`SELECT * FROM quizzes as quiz WHERE "quiz"."quizid"=${req.body.quizid} AND EXISTS(SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${userid} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`)
+      if (quizAuth[0].length > 0) {
+        sql = 'SELECT * FROM "Responses" AS "Response" WHERE "Response"."StudentSid"= ' + userid + ' AND "Response"."quizQuizid"=' + req.body.quizid + ''
+        models.sequelize.query(sql).then(([result, metadata]) => {
+          id = result[0].id
+          response = result[0].response
+          response[req.body.question] = req.body.answer
+          response = JSON.stringify(response)
+          date = new Date()
+          date = date.toJSON()
+          sql = 'UPDATE "Responses" SET "response"=\'' + response + '\', "updatedAt"=\'' + date + '\' WHERE "id"=' + id + ' RETURNING *'
+          models.sequelize.query(sql).then(([result, metadata]) => {
+            res.json(result)
+          }).catch((err) => {
+            console.log(err)
+            res.json("It is not quiz time")
+          })
+        }).catch((err) => {
+          console.log(err)
+          res.json("You havent clicked on startquiz")
+        })
+      }
+      else {
+        res.status(403).json("You are not authorized to take this test")
+      }
     }).catch((err) => {
-      res.json("A token error occured")
+      res.status(403).json("Token Error")
     })
-  }).catch((err) => {
-    console.log("A token error occured")
   })
-})
 
-// try{
-//     var id = await token2id(req.get("x-access-token"))
-//     console.log(id)
-// }
-// catch{
-//   console.log("Token error")
-// }
-
-router.post("/getResponses", (req, res) => {
-  //User verification
-  //Group verification
-  // models.Response.findAll({
-  //   where:{
-  //     StudentSid:req.body.userid,
-  //     quizQuizid:req.body.quizid
-  //   }
-  // }).then((result)=>{
-  //   res.json(result)
-  // })
-  token2id(req.get("x-access-token")).then((id) => {
-    //check if id(Student) is in course or not req.body.cid
-    //change SQL command after getting course api
-    sql = 'SELECT "id", "response", "createdAt", "updatedAt", "quizQuizid", "StudentSid" FROM "Responses" AS "Response" WHERE "Response"."StudentSid" = ' + id + ' AND "Response"."quizQuizid" =' + req.body.quizid + ''
-    models.sequelize.query(sql).then(([result, metadata]) => {
-      res.json(result)
+  router.get("/quizresults/:quizid", async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id) => {
+      if (await getters.isTeacher(id)) {
+        quizTeacherResults = await models.sequelize.query(`SELECT "Responses"."id","quizQuizid","StudentSid",quizname,username,email,response,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"=${req.params.quizid} AND "quizzes"."quizid"=${req.params.quizid} AND "Users"."userid"="Responses"."StudentSid"`)
+        res.json(quizTeacherResults[0])
+      }
+      else {
+        quizStudentResults = await models.sequelize.query(`SELECT "Responses"."id","quizQuizid","StudentSid",quizname,username,email,response,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"=${req.params.quizid} AND "quizzes"."quizid"=${req.params.quizid} AND "Users"."userid"="Responses"."StudentSid" AND "Responses"."StudentSid"=${id} `)
+        res.json(quizStudentResults[0])
+      }
     }).catch((err) => {
-      res.json("There has been an error")
+      res.status(403).json("Token error")
     })
-  }).catch((err) => {
-    res.status(403).json("Token Error")
   })
-
-})
-
-router.post("/startquiz", (req, res) => {
-  // User verification
-  // Group verification
-  // models.Response.create({
-  //   StudentSid:req.body.userid,
-  //   quizQuizid:req.body.quizid,
-  //   response:[]
-  // }).then((result)=>{
-  //   res,json(result)
-  // })
-  token2id(req.get("x-access-token")).then((id) => {
-    //check if id(Student) is in course or not req.body.cid
-    //change SQL command after getting course api
-    date = new Date()
-    date = date.toJSON()
-    sql = 'INSERT INTO "Responses" ("response","createdAt","updatedAt","quizQuizid","StudentSid") SELECT  \'[]\', \'' + date + '\', \'' + date + '\', ' + req.body.quizid + ',' + id + ' WHERE NOT EXISTS ( SELECT 1 FROM "Responses" WHERE "StudentSid"=' + id + ' AND "quizQuizid"=' + req.body.quizid + ' ) RETURNING *'
-    models.sequelize.query(sql).then(([result, metadata]) => {
-      res.json(result)
+  router.get("/courseresults/:courseid", async (req, res) => {
+    token2id(req.get("x-access-token")).then(async (id) => {
+      if (await getters.isTeacher(id)) {
+        courseTeacherResults = await models.sequelize.query(`SELECT "Responses"."id","quizQuizid","StudentSid",quizname,username,email,response,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Users"."userid"="Responses"."StudentSid"`)
+        res.json(courseTeacherResults[0])
+      }
+      else {
+        courseStudentResults = await models.sequelize.query(`SELECT "Responses"."id","quizQuizid","StudentSid",quizname,username,email,response,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Users"."userid"=${id}`)
+        res.json(courseStudentResults[0])
+      }
     }).catch((err) => {
       console.log(err)
-      res.json("There has been an error")
+      res.status(403).json("Token error")
     })
-  }).catch((err) => {
-    res.status(403).json("Token Error")
   })
-
-})
-router.post("/sendAnswer", (req, res) => {
-  //User verification
-  //Group verification
-
-  // models.Response.findOrCreate({
-  //   where:{
-  //     StudentSid:req.body.userid,
-  //     quizQuizid:req.body.quizid,
-  //   },
-  //   defaults:{
-  //       response:[]
-  //   }
-  // }).then(([resp,created])=>{
-  //   resp.response[req.body.question] = req.body.answer;
-  //   resp.update({response:resp.response}).then(result=>{
-  //     res.json(result)
-  //   }).catch(err=>{res.json("response pattern incorrect")})
-  // }).catch(err=>{res.json("Use correct values")})
-  token2id(req.get("x-access-token")).then((userid) => {
-    //check if id(Student) is in course or not req.body.cid
-    //change SQL command after getting course api
-    sql = 'SELECT * FROM "Responses" AS "Response" WHERE "Response"."StudentSid"= ' + userid + ' AND "Response"."quizQuizid"=' + req.body.quizid + ''
-    models.sequelize.query(sql).then(([result, metadata]) => {
-      id = result[0].id
-      response = result[0].response
-      response[req.body.question] = req.body.answer
-      response = JSON.stringify(response)
-      date = new Date()
-      date = date.toJSON()
-      sql = 'UPDATE "Responses" SET "response"=\'' + response + '\', "updatedAt"=\'' + date + '\' WHERE "id"=' + id + ' RETURNING *'
-      models.sequelize.query(sql).then(([result, metadata]) => {
-        res.json(result)
-      }).catch((err) => {
-        console.log(err)
-        res.json("There has been an error")
+  router.get("/quizmarksall/:quizid", async (req, res) => {
+    try {
+      var results_data = await models.sequelize.query(`SELECT "marks" from "Responses" WHERE "Responses"."quizQuizid"=${req.params.quizid}`)
+      results_data = results_data[0]
+      var marks_array = results_data.map(function (result) {
+        return result.marks
+      }).filter((elem) => {
+        return elem != null
       })
-    }).catch((err) => {
-      console.log(err)
-      res.json("There has been an error")
-    })
 
-  }).catch((err) => {
-    res.status(403).json("Token Error")
+      res.json(marks_array)
+    } catch (e) {
+      console.log(e)
+      res.status(500).send("error")
+    }
+
   })
-
-
-})
-
-return router
+  return router
 }
