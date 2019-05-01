@@ -12,12 +12,13 @@ app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(express.static('api/static'));
 
 
-var quizRoutes = require("./api/quizRoutes")
-var courseRoutes = require("./api/courseRoutes")
+let quizRoutes = require("./api/quizRoutes")
+let courseRoutes = require("./api/courseRoutes")
 
 app.use('/course', courseRoutes(models))
 app.use('/quiz', quizRoutes(models))
-var AuthController = require('./auth/AuthController');
+
+let AuthController = require('./auth/AuthController');
 app.use('/api/auth', AuthController(models));
 
 models.sequelize.sync().then(function () {
