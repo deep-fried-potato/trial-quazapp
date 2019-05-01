@@ -1,5 +1,5 @@
 var path = require('path')
-var filePath = path.join(__dirname, 'Quiz1.pdf')
+var filePath = path.join(__dirname, 'Quiz2.pdf')
 var extract = require('pdf-text-extract')
 extract(filePath, function (err, pages) {
     if (err) {
@@ -8,6 +8,8 @@ extract(filePath, function (err, pages) {
     }
     console.log(pages)
     str = pages[0]
+    str=str.replace(/\r/g,'')
+    console.log([str])
     var i = 0;
     while(i < str.length)
     {
@@ -17,7 +19,7 @@ extract(filePath, function (err, pages) {
         {
             quizname += str[i++]
         }
-        console.log(quizname, i);
+        // console.log(quizname, i);
         i++;
 
         //Get accessKey from PDF
@@ -26,7 +28,7 @@ extract(filePath, function (err, pages) {
         {
             accesskey += str[i++]
         }
-        console.log(accesskey, i);
+        // console.log(accesskey, i);
         i++;
 
         //Get startTime from PDF
@@ -35,7 +37,7 @@ extract(filePath, function (err, pages) {
         {
             starttime += str[i++]
         }
-        console.log(starttime, i);
+        // console.log(starttime, i);
         i++;
 
         //Get endTime from PDF
@@ -44,7 +46,7 @@ extract(filePath, function (err, pages) {
         {
             endtime += str[i++]
         }
-        console.log(endtime, i);
+        // console.log(endtime, i);
         i++;
         i++;
 
@@ -52,7 +54,7 @@ extract(filePath, function (err, pages) {
         var qdata=[];
         while(str[i] != '\n' && str[i] != '!')
         {
-            
+
             //Get questionName from PDF
             var questionText =''
             while(str[i] != '\n')
@@ -79,8 +81,9 @@ extract(filePath, function (err, pages) {
                 options : options
             });
         }
-        console.log(qdata, str[i]);
-        
+
+        // console.log(qdata, str[i]);
+
         while(str[i] != '\n')
         {
             i++;
@@ -91,23 +94,27 @@ extract(filePath, function (err, pages) {
         while(str[i] != '\n' && i < str.length)
         {
             var answer = '';
-            
+
             while(str[i] != '\n')
             {
                 answer += str[i++];
             }
-            
+
             i++;
             // console.log(answer,i,str[i]);
             answers.push(answer-1);
-            
+
         }
-        console.log(answers, i);
+
+        console.log(quizname);
+        console.log(accesskey);
+        console.log(starttime);
+        console.log(endtime);
+        console.log(qdata);
+        console.log(answers);
 
 
         break;
     }
-    
+
 })
-
-

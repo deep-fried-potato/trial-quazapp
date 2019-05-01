@@ -1,7 +1,19 @@
 const express = require('express')
 const token2id = require("../auth/token2id")
+let multer = require('multer')
+const path = require('path');
+var extract = require('pdf-text-extract')
 
 module.exports = function (models, client) {
+  var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads')
+    },
+    filename: function (req, file, cb) {
+      cb(null, file.fieldname + '-' + Date.now()+"-"+file.originalname)
+    }
+  })
+  var upload = multer({ storage: storage })
   const getters = require("../lib/getters")(models, client)
   const testtimers = require("../lib/testtimers")(models)
 
@@ -9,6 +21,7 @@ module.exports = function (models, client) {
 
   router.get("/listquizzes/:courseid", async (req, res) => {
     token2id(req.get("x-access-token")).then(async (id) => {
+      console.log(id)
       if (await getters.isTeacher(id)) {
         models.sequelize.query(`SELECT quizid,quizname,starttime,endtime from quizzes as quiz WHERE "quiz"."CourseCid"=${req.params.courseid} AND EXISTS (SELECT * FROM "Courses" WHERE "Courses"."TeacherTid"=${id})`).then(([result, metadata]) => {
           res.json(result)
@@ -181,13 +194,13 @@ module.exports = function (models, client) {
         res.json({avglist:avglist,highestlist:highestlist,quiznamelist:quiznamelist})
       }
       else{
-        courseStudentResults = await models.sequelize.query(`SELECT quizname,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Users"."userid"=${id}`)
+        courseStudentResults = await models.sequelize.query(`SELECT quizname,marks  from "Responses","quizzes" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Responses"."StudentSid"=${id}`)
         var yourlist= courseStudentResults[0]
         yourlist = yourlist.map(function (result){
           if(result.marks) return result.marks
           else return 0
         })
-
+        yourlist=[1,2,3,4,5,6]
         res.json({avglist:avglist,highestlist:highestlist,quiznamelist:quiznamelist,yourlist:yourlist,resultslist:courseStudentResults[0]})
       }
     }).catch((err) => {
@@ -239,6 +252,134 @@ module.exports = function (models, client) {
       res.status(500).json(e)
     }
   })
+  router.post("/pdfupload",upload.single("document"),(req,res)=>{
+    const file = req.file
+    var filePath = path.join(__dirname,"..","uploads", file.filename)
+    extract(filePath, function (err, pages) {
+        if (err) {
+            console.dir(err)
+            return
+        }
+        console.log(pages)
 
+        str = pages[0]
+        str = str.replace(/\r/g,'')
+        console.log(str)
+        var i = 0;
+        while(i < str.length)
+        {
+            //Get quizName from PDF
+            var quizname='';
+            while(str[i] != '\n')
+            {
+                quizname += str[i++]
+            }
+            // console.log(quizname, i);
+            i++;
+
+            //Get accessKey from PDF
+            var accesskey='';
+            while(str[i] != '\n')
+            {
+                accesskey += str[i++]
+            }
+            // console.log(accesskey, i);
+            i++;
+
+            //Get startTime from PDF
+            var starttime='';
+            while(str[i] != '\n')
+            {
+                starttime += str[i++]
+            }
+            // console.log(starttime, i);
+            i++;
+
+            //Get endTime from PDF
+            var endtime='';
+            while(str[i] != '\n')
+            {
+                endtime += str[i++]
+            }
+            // console.log(endtime, i);
+            i++;
+            i++;
+
+            //Get qData from PDF
+            var qdata=[];
+            while(str[i] != '\n' && str[i] != '!')
+            {
+
+                //Get questionName from PDF
+                var questionText =''
+                while(str[i] != '\n')
+                {
+                    questionText += str[i++]
+                }
+                i++;
+
+                //Get options from PDF
+                var options=[]
+                while(str[i] != '\n')
+                {
+                    var option = '';
+                    while(str[i] != '\n')
+                    {
+                        option += str[i++]
+                    }
+                    i++
+                    options.push(option);
+                }
+                i++
+                qdata.push({
+                    questiontext : questionText,
+                    options : options
+                });
+            }
+
+            // console.log(qdata, str[i]);
+
+            while(str[i] != '\n')
+            {
+                i++;
+            }
+            i++
+            // console.log(i,str[i]);
+            var answers = [];
+            while(str[i] != '\n' && i < str.length)
+            {
+                var answer = '';
+
+                while(str[i] != '\n')
+                {
+                    answer += str[i++];
+                }
+
+                i++;
+                // console.log(answer,i,str[i]);
+                answers.push(answer-1);
+
+            }
+
+            console.log(quizname);
+            console.log(accesskey);
+            console.log(starttime);
+            console.log(endtime);
+            console.log(qdata);
+            console.log(answers);
+            var data = {
+              quizname:quizname,
+              accesskey:accesskey,
+              starttime:starttime,
+              endtime:endtime,
+              answers:answers,
+              qdata:qdata
+            }
+            res.json(data)
+            break;
+        }
+
+    })
+  })
   return router
 }
