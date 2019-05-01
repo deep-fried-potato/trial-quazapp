@@ -1,9 +1,11 @@
-let express = require('express')
-let token2id = require("../auth/token2id")
+const express = require('express')
+const token2id = require("../auth/token2id")
 
 module.exports = function (models) {
-  let getters = require("../lib/getters")(models)
-  let router = express.Router()
+  const getters = require("../lib/getters")(models)
+  const testtimers = require("../lib/testtimers")(models)
+
+  const router = express.Router()
 
   router.get("/listquizzes/:courseid", async (req, res) => {
     token2id(req.get("x-access-token")).then(async (id) => {
@@ -56,9 +58,13 @@ module.exports = function (models) {
         date = new Date()
         date = date.toJSON()
         sql = 'INSERT INTO "quizzes" ("accesskey","quizname","qdata","answers","CourseCid","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + req.body.quizname + '\',\'' + qdata + '\',\'' + answers + '\',' + req.body.coursecid + ',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
-        models.sequelize.query(sql).then(([result, metadata]) => {
+        models.sequelize.query(sql).then(async ([result, metadata]) => {
           res.json(result)
+          console.log(result[0]['quizid'])
+          await testtimers.testEndTimer(result[0]['quizid'])
+
         }).catch((err) => {
+          console.log(err)
           res.json("Please Check quiz timings")
         })
       }
@@ -184,5 +190,16 @@ module.exports = function (models) {
     }
 
   })
+
+  router.get("/testresults/:quizid", async (req, res) => {
+    try {
+      await testtimers.testCM(req.params.quizid)
+      res.json({})
+    } catch (e) {
+      console.log(e)
+      res.status(500).json(e)
+    }
+  })
+
   return router
 }

@@ -1,15 +1,11 @@
-var express = require('express');
-
-
-var jwt = require('jsonwebtoken');
-var bcrypt = require('bcryptjs');
-var config = require('../config/secret');
-let models = require("../models")
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const config = require('../config/secret');
+const models = require("../models")
 
 module.exports = function (models) {
-  let router = express.Router();
-
-
+  const router = express.Router();
 
   router.post('/register', (req, res) => {
     var hashedPassword = bcrypt.hashSync(req.body.password, 8);
@@ -103,6 +99,4 @@ function verifyUser(email, password) {
     })
 
   })
-
-})
 }
