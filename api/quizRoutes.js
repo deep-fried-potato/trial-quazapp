@@ -154,13 +154,35 @@ module.exports = function (models) {
   })
   router.get("/courseresults/:courseid",async (req,res)=>{
     token2id(req.get("x-access-token")).then(async (id)=>{
+      var avglist =[]
+      var highestlist=[]
+      var quiznamelist=[]
+      quizzesInCourse = await models.sequelize.query(`SELECT quizid,quizname FROM quizzes WHERE "CourseCid"=${req.params.courseid}`)
+      for(var quiz in quizzesInCourse[0]){
+        quiznamelist.push(quizzesInCourse[0][quiz].quizname)
+        results_data = await models.sequelize.query(`SELECT marks FROM "Responses" WHERE "quizQuizid"=${quizzesInCourse[0][quiz].quizid}`)
+        results_data = results_data[0]
+
+        var marks_array = results_data.map(function (result){
+          if(result.marks) return result.marks
+          else return 0
+        })
+        marks_array=[Math.random()*10,Math.random()*10,Math.random()*10,Math.random()*10,Math.random()*10]
+        avglist.push(marks_array.reduce((a,b) => a + b, 0) /marks_array.length )
+        highestlist.push(Math.max(...marks_array))
+      }
       if(await getters.isTeacher(id)){
-          courseTeacherResults = await models.sequelize.query(`SELECT "Responses"."id","quizQuizid","StudentSid",quizname,username,email,response,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Users"."userid"="Responses"."StudentSid"`)
-          res.json(courseTeacherResults[0])
+        res.json({avglist:avglist,highestlist:highestlist,quiznamelist:quiznamelist})
       }
       else{
-        courseStudentResults = await models.sequelize.query(`SELECT "Responses"."id","quizQuizid","StudentSid",quizname,username,email,response,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Users"."userid"=${id}`)
-        res.json(courseStudentResults[0])
+        courseStudentResults = await models.sequelize.query(`SELECT quizname,marks  from "Responses","quizzes","Users" WHERE "Responses"."quizQuizid"="quizzes"."quizid" AND "quizzes"."CourseCid"=${req.params.courseid} AND "Users"."userid"=${id}`)
+        var yourlist= courseStudentResults[0]
+        yourlist = yourlist.map(function (result){
+          if(result.marks) return result.marks
+          else return 0
+        })
+
+        res.json({avglist:avglist,highestlist:highestlist,quiznamelist:quiznamelist,yourlist:yourlist,resultslist:courseStudentResults[0]})
       }
     }).catch((err)=>{
       console.log(err)
@@ -174,9 +196,26 @@ module.exports = function (models) {
       var marks_array = results_data.map(function (result){
         return result.marks
       }).filter((elem)=>{
-        return elem!=null
+        return elem!==null
       })
+      marks_array=[1,2,3,4,5,6,7,8,9]
+      res.json(marks_array)
+    } catch (e) {
+      console.log(e)
+      res.status(500).send("error")
+    }
 
+  })
+  router.get("/coursemarksall/:courseid",async (req,res)=>{
+    try {
+      var results_data = await models.sequelize.query(`SELECT "marks" from "Responses" WHERE EXISTS(SELECT * FROM "quizzes" WHERE "Responses"."quizQuizid"="quizid" AND "quizzes"."CourseCid"=${req.params.courseid} )`)
+      results_data = results_data[0]
+      var marks_array = results_data.map(function (result){
+        return result.marks
+      }).filter((elem)=>{
+        return elem!==null
+      })
+      marks_array=[1,2,3,4,5,6,7,8,9]
       res.json(marks_array)
     } catch (e) {
       console.log(e)
