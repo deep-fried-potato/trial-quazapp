@@ -268,9 +268,32 @@ module.exports = (models, client) => {
 
     console.log(vectors)
 
-    kmeans.clusterize(vectors, { k: 4 }, (err, res) => {
-      if (err) console.error(err);
-      else console.log('%o', res);
+    kmeans.clusterize(vectors, { k: 5 }, (err, clusters) => {
+      if (err)
+        console.error(err)
+      else {
+        clusters = clusters.sort((a, b) => {
+          console.log(a.centroid[0] - b.centroid[0])
+          return a.centroid[0] - b.centroid[0]
+        })
+        console.log('%o', clusters)
+
+        let sendJSON = {}
+
+        let grades = ['S', 'A', 'B', 'C', 'D']
+        for (let i = 0; i < 5; i++) {
+          clusters[i].clusterInd.forEach(entry => {
+            console.log(entry)
+            sendJSON[result[entry].StudentSid] = {
+              "grade": grades[i],
+              "marks": result[entry].sum
+            }
+          })
+        }
+
+        console.log(sendJSON)
+
+      }
     });
 
     res.json(result)
