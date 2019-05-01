@@ -1,6 +1,7 @@
 import requests
 import json
 import random
+import time
 
 tokens = []
 
@@ -49,53 +50,53 @@ def createquiz(course=1, token=t_token, qname="DBMS_ENDSEM"):
     data=json.loads("""
       {
         "accesskey":"DBMS",
-        "quizname":"DBMS ENDSEM",
+        "quizname":""" + f"\"{qname}\"" + """,
         "qdata":[
             {
-              "questiontext":"What is a lock"	,
-              "options":["a physical lock","not a lock","database lock","data protector"]
+              "questiontext":"""+ f"\"{qname}" + """Question 1",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"What is UML"	,
-              "options":["Universal media lang","University of Mary Land","Unified modeling language","Language of the Model of the Universe"]
+              "questiontext":"""+ f"\"{qname}" + """Question 2",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"What is DB"	,
-              "options":["Database","Double Bass","Dirty Bat","Donald Brump"]
+              "questiontext":"""+ f"\"{qname}" + """Question 3",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 4",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 5",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 6",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 7",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 8",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 9",
+              "options":["Option1","Option2","Option3","Option4"]
             },
             {
-              "questiontext":"Why is DB"	,
-              "options":["yes","no","all of the above","yes"]
+              "questiontext":"""+ f"\"{qname}" + """Question 10",
+              "options":["Option1","Option2","Option3","Option4"]
             }
           ],
         "answers":[2,2,1,4,1,2,3,3,1,4,4],	
         "coursecid":1,	
-        "starttime":"2019-05-01T16:40:00.782Z",
-        "endtime":"2019-05-01T16:40:40.782Z"
+        "starttime":"2019-05-01T20:43:00.782Z",
+        "endtime":"2019-05-01T20:50:50.782Z"
       }""")
   )
 
@@ -122,9 +123,15 @@ def randomresponses(quiz):
         headers={'x-access-token': t}
       )
 
+quizids = []
 
 readtokens()
-id = createquiz()
-startquiz(id)
-randomresponses(id)
+for i in range(10):
+  quizids.append(createquiz(qname="Quiz"+str(i)))
+
+time.sleep(60)
+
+for q in quizids:
+  startquiz(q)
+  randomresponses(q)
 

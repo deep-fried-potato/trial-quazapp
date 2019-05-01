@@ -18,8 +18,6 @@ module.exports = function (models) {
       password: hashedPassword
     }).then((user) => {
 
-
-
       //create a token
       console.log(user);
       var token = jwt.sign({ id: user.userid }, config.secret, {
