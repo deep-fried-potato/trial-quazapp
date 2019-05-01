@@ -1,22 +1,14 @@
-let express = require('express')
+const express = require('express')
 const SparkMD5 = require('spark-md5')
 const md5 = require('md5')
 const token2id = require("../auth/token2id")
-
-let getStudent = (req) => {
-  return 1
-}
-
-let getTeacher = (req) => {
-  return 1
-}
 
 module.exports = (models) => {
 
   // how_to_import
   const _getters = require("../lib/getters")(models)
 
-  let router = express.Router()
+  const router = express.Router()
 
   router.get('/listgroups', async (req, res) => {
     try {
@@ -50,24 +42,6 @@ module.exports = (models) => {
       res.json(e)
     }
   })
-
-
-  // router.get("/getcourse/:id", (req, res) => {
-  //   models.Course.findOne({
-  //     where: {
-  //       cid: req.params.id
-  //     }
-  //   }).then(result => {
-  //     res.json(result);
-  //   }).catch((err) => {
-  //     models.sequelize.query(sql).then(([result, metadata]) => {
-  //       res.json(result)
-  //     }).catch((err) => {
-  //       res.json("There has been an error")
-  //     })
-  //     if (err.errors) res.json(err.errors[0].message)
-  //   })
-  // })
 
   router.post("/createcourse", async (req, res) => {
 
@@ -138,11 +112,6 @@ module.exports = (models) => {
 
       let date = new Date()
       date = date.toJSON()
-
-      // sql = `INSERT INTO "Students" VALUES (?, ?, ?) RETURNING *`
-      // let teacher = await models.sequelize.query(sql, {
-      //   replacements: [id, date, date]
-      // })
 
 
       sql = `INSERT INTO "StudentCourse"("CourseCid", "StudentSid", "createdAt", "updatedAt") VALUES(?,?,?,?) RETURNING *`

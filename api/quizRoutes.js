@@ -1,8 +1,9 @@
-let express = require('express')
-let token2id = require("../auth/token2id")
+const express = require('express')
+const token2id = require("../auth/token2id")
 module.exports = function (models) {
 
-  let router = express.Router()
+  const _testtimers = require("../lib/testtimers.js")(models)
+  const router = express.Router()
 
   router.get("/listquizzes", (req, res) => {
     // models.quiz.findAll({
@@ -68,6 +69,7 @@ module.exports = function (models) {
       sql = 'INSERT INTO "quizzes" ("accesskey","qdata","starttime","endtime","createdAt","updatedAt") VALUES (\'' + req.body.accesskey + '\',\'' + qdata + '\',\'' + req.body.starttime + '\',\'' + req.body.endtime + '\',\'' + date + '\',\'' + date + '\' ) RETURNING *'
       models.sequelize.query(sql).then(([result, metadata]) => {
         res.json(result)
+
       }).catch((err) => {
         res.json("There has been an error")
       })
