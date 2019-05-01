@@ -1,11 +1,13 @@
 const express = require('express')
 const md5 = require('md5')
+const kmeans = require('node-kmeans')
+
 const token2id = require("../auth/token2id")
 
-module.exports = (models) => {
+module.exports = (models, client) => {
 
   // how_to_import
-  const _getters = require("../lib/getters")(models)
+  const _getters = require("../lib/getters")(models, client)
 
   const router = express.Router()
 
@@ -56,23 +58,6 @@ module.exports = (models) => {
 
   })
 
-
-  // router.get("/getcourse/:id", (req, res) => {
-  //   models.Course.findOne({
-  //     where: {
-  //       cid: req.params.id
-  //     }
-  //   }).then(result => {
-  //     res.json(result);
-  //   }).catch((err) => {
-  //     models.sequelize.query(sql).then(([result, metadata]) => {
-  //       res.json(result)
-  //     }).catch((err) => {
-  //       res.json("There has been an error")
-  //     })
-  //     if (err.errors) res.json(err.errors[0].message)
-  //   })
-  // })
 
   router.post("/createcourse", async (req, res) => {
 
@@ -160,7 +145,135 @@ module.exports = (models) => {
 
   })
 
+  router.get("/getCSV/:courseid", async (req, res) => {
+
+    let id, coursetid
+
+    try {
+      id = await token2id(req.get('x-access-token'))
+      coursetid = await _getters.getTidFromCourse(req.params.courseid)
+    } catch (e) {
+      res.json(e)
+    }
+
+    if (id != coursetid) {
+      res.status(403).send("Forbidden")
+    }
+
+    let sql = `SELECT "StudentSid", marks, "quizQuizid" from "Responses" WHERE "quizQuizid" IN `
+      + `(SELECT quizid from quizzes WHERE "CourseCid"=${req.params.courseid})`;
 
 
+    try {
+      let result = await models.sequelize.query(sql)
+      result = result[0]
+      console.log(result)
+
+      let rows = {}
+      let quizzes = {}
+      let students = {}
+
+      for (const idx in result) {
+        console.log(idx)
+        let student = result[idx]['StudentSid']
+        if (!(student in students)) {
+          students[student] = 1
+        }
+
+        let quiz = result[idx]['quizQuizid']
+        if (!(quiz in quizzes)) {
+          quizzes[quiz] = 1
+        }
+
+        console.log(student, quiz)
+        if (student in rows) {
+          rows[student][quiz] = 1
+        } else {
+          rows[student] = {}
+          rows[student][quiz] = 1
+        }
+      }
+
+      console.log(rows)
+      console.log(quizzes)
+      console.log(students)
+
+      sql = `SELECT userid, name from "Users" WHERE userid IN (${Object.keys(students).join(',')}) ORDER BY userid`
+      result = await models.sequelize.query(sql)
+      let studentNames = result[0].map(obj => obj['name'])
+      console.log(studentNames)
+
+      sql = `SELECT quizname from "quizzes" WHERE quizid IN (${Object.keys(quizzes).join(',')}) ORDER BY quizid`
+      result = await models.sequelize.query(sql)
+      let quizNames = result[0].map(obj => `"${obj['quizname']}"`)
+      console.log(quizNames)
+
+      let csv = `"studentID","name",${quizNames.join(",")}\n`
+
+      Object.keys(students).sort().forEach((student) => {
+        let row = ""
+        row += `"${student}","${studentNames.shift()},"`
+        console.log(row)
+        row += Object.keys(quizzes).sort().map(quiz => {
+          console.log(quiz)
+          if (quiz in rows[student])
+            return `"${rows[student][quiz]}"`
+          else
+            return `""`
+        }).join(",")
+        row += `\n`
+        console.log(row);
+        csv += row
+      })
+
+      res.setHeader('Content-disposition', `attachment; filename=marks_${req.params.courseid}.csv`);
+      res.setHeader('Content-type', 'text/csv');
+      res.send(csv);
+
+    } catch (e) {
+      res.status(400).send(e)
+    }
+
+  })
+
+  router.post("/getclusters", async (req, res) => {
+    let id, coursetid, result
+
+    try {
+      id = await token2id(req.get('x-access-token'))
+      coursetid = await _getters.getTidFromCourse(req.body.courseid)
+    } catch (e) {
+      res.json(e)
+    }
+
+    if (id != coursetid) {
+      res.status(403).send("Forbidden")
+    }
+
+    let sql = `SELECT "StudentSid", SUM(marks) from "Responses" WHERE "quizQuizid" IN `
+      + `(SELECT quizid from quizzes WHERE "CourseCid"=${req.body.courseid}) GROUP BY "StudentSid"`;
+
+    try {
+      result = await models.sequelize.query(sql)
+      result = result[0]
+
+      console.log(JSON.stringify(result))
+
+    } catch (e) {
+      console.log(e)
+      res.json(e)
+    }
+
+    let vectors = result.map((entry) => [parseInt(entry.sum)])
+
+    console.log(vectors)
+
+    kmeans.clusterize(vectors, { k: 4 }, (err, res) => {
+      if (err) console.error(err);
+      else console.log('%o', res);
+    });
+
+    res.json(result)
+  })
   return router
 }
