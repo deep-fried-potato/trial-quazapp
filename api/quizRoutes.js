@@ -1,8 +1,8 @@
 const express = require('express')
 const token2id = require("../auth/token2id")
 
-module.exports = function (models) {
-  const getters = require("../lib/getters")(models)
+module.exports = function (models, client) {
+  const getters = require("../lib/getters")(models, client)
   const testtimers = require("../lib/testtimers")(models)
 
   const router = express.Router()
