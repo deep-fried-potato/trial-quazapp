@@ -15,3 +15,5 @@ Quazapp: Online Quiz Taking and Progress Management System is a examination mana
 * ``` npm run ```
 
 The server is available at http://HOSTNAME:8000
+
+![alt text](https://travis-ci.org/SiddharthaMishra/trial-quazapp.svg?branch=master)
