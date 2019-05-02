@@ -250,8 +250,8 @@ module.exports = (models, client) => {
       res.status(403).send("Forbidden")
     }
 
-    let sql = `SELECT "StudentSid", SUM(marks) from "Responses" WHERE "quizQuizid" IN `
-      + `(SELECT quizid from quizzes WHERE "CourseCid"=${req.body.courseid}) GROUP BY "StudentSid"`;
+    let sql = `SELECT "StudentSid", SUM(marks) from "Responses" WHERE  "quizQuizid" IN `
+      + `(SELECT quizid from quizzes WHERE "CourseCid"=${req.body.courseid})  GROUP BY "StudentSid"`;
 
     try {
       result = await models.sequelize.query(sql)
@@ -285,18 +285,18 @@ module.exports = (models, client) => {
           clusters[i].clusterInd.forEach(entry => {
             console.log(entry)
             sendJSON[result[entry].StudentSid] = {
-              "grade": grades[i],
+              "grade": grades[4-i],
               "marks": result[entry].sum
             }
           })
         }
 
         console.log(sendJSON)
+        res.json(sendJSON)
 
       }
     });
 
-    res.json(result)
   })
   return router
 }

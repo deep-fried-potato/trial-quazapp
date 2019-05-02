@@ -106,6 +106,7 @@ module.exports = function (models, client) {
   router.post("/startquiz", async (req, res) => {
     token2id(req.get("x-access-token")).then(async (id) => {
       quizAuth = await models.sequelize.query(`SELECT * FROM quizzes as quiz WHERE "quiz"."quizid"=${req.body.quizid} AND EXISTS(SELECT * FROM "StudentCourse" WHERE "StudentCourse"."StudentSid"=${id} AND "StudentCourse"."CourseCid"="quiz"."CourseCid")`)
+      console.log(req.body.accesskey, quizAuth[0])
       if (quizAuth[0].length > 0 && quizAuth[0][0].accesskey == req.body.accesskey) {
         date = new Date()
         date = date.toJSON()
@@ -121,6 +122,7 @@ module.exports = function (models, client) {
         res.status(403).json("You are not authorized to take this test")
       }
     }).catch((err) => {
+      console.log(err)
       res.status(403).json("Token Error")
     })
   })
