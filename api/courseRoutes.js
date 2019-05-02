@@ -187,10 +187,10 @@ module.exports = (models, client) => {
 
         console.log(student, quiz)
         if (student in rows) {
-          rows[student][quiz] = 1
+          rows[student][quiz] = result[idx]['marks']
         } else {
           rows[student] = {}
-          rows[student][quiz] = 1
+          rows[student][quiz] = result[idx]['marks']
         }
       }
 
@@ -227,7 +227,7 @@ module.exports = (models, client) => {
       })
 
       res.setHeader('Content-disposition', `attachment; filename=marks_${req.params.courseid}.csv`);
-      res.setHeader('Content-type', 'text/csv');
+      res.setHeader('Content-type', 'application/octet-stream');
       res.send(csv);
 
     } catch (e) {

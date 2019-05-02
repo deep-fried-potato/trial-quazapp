@@ -188,7 +188,6 @@ module.exports = function (models, client) {
           if(result.marks) return result.marks
           else return 0
         })
-        marks_array=[Math.random()*10,Math.random()*10,Math.random()*10,Math.random()*10,Math.random()*10]
         avglist.push(marks_array.reduce((a,b) => a + b, 0) /marks_array.length )
         highestlist.push(Math.max(...marks_array))
       }
@@ -202,7 +201,6 @@ module.exports = function (models, client) {
           if(result.marks) return result.marks
           else return 0
         })
-        yourlist=[1,2,3,4,5,6]
         res.json({avglist:avglist,highestlist:highestlist,quiznamelist:quiznamelist,yourlist:yourlist,resultslist:courseStudentResults[0]})
       }
     }).catch((err) => {
@@ -219,7 +217,6 @@ module.exports = function (models, client) {
       }).filter((elem)=>{
         return elem!==null
       })
-      marks_array=[1,2,3,4,5,6,7,8,9]
       res.json(marks_array)
     } catch (e) {
       console.log(e)
@@ -236,7 +233,6 @@ module.exports = function (models, client) {
       }).filter((elem)=>{
         return elem!==null
       })
-      marks_array=[1,2,3,4,5,6,7,8,9]
       res.json(marks_array)
     } catch (e) {
       console.log(e)
